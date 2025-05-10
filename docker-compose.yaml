@@ -5,10 +5,6 @@ services:
       dockerfile: Dockerfile
     image: reaostf
     pull_policy: never
-    volumes:
-      - node_modules:/app/node_modules
-      - bower_components:/app/res/bower_components
-      - res_build:/app/res/build
 
   api:
     image: reaostf
@@ -20,11 +16,6 @@ services:
       - rethinkdb
       - triproxy-app
       - triproxy-dev
-    volumes:
-      - .:/app
-      - node_modules:/app/node_modules
-      - bower_components:/app/res/bower_components
-      - res_build:/app/res/build
     environment:
       - RETHINKDB_PORT_28015_TCP=tcp://rethinkdb:28015
       - STF_API_CONNECT_PUSH=tcp://triproxy-app:7113
@@ -45,11 +36,6 @@ services:
       - rethinkdb
       - auth-ldap
       - websocket
-    volumes:
-      - .:/app
-      - node_modules:/app/node_modules
-      - bower_components:/app/res/bower_components
-      - res_build:/app/res/build
     environment:
       - RETHINKDB_PORT_28015_TCP=tcp://rethinkdb:28015
       - STF_ADMIN_EMAIL=admin@ldap.lan
@@ -70,11 +56,6 @@ services:
       - builder
       - rethinkdb
       - openldap
-    volumes:
-      - .:/app
-      - node_modules:/app/node_modules
-      - bower_components:/app/res/bower_components
-      - res_build:/app/res/build
     environment:
       - RETHINKDB_PORT_28015_TCP=tcp://rethinkdb:28015
       - STF_AUTH_LDAP_APP_URL=/
@@ -97,11 +78,6 @@ services:
         condition: service_started
       triproxy-dev:
         condition: service_started
-    volumes:
-      - .:/app
-      - node_modules:/app/node_modules
-      - bower_components:/app/res/bower_components
-      - res_build:/app/res/build
     environment:
       - RETHINKDB_PORT_28015_TCP=tcp://rethinkdb:28015
       - STF_GROUPS_ENGINE_CONNECT_PUSH=tcp://triproxy-app:7113
@@ -119,11 +95,6 @@ services:
       - rethinkdb
       - triproxy-app
       - triproxy-dev
-    volumes:
-      - .:/app
-      - node_modules:/app/node_modules
-      - bower_components:/app/res/bower_components
-      - res_build:/app/res/build
     environment:
       - RETHINKDB_PORT_28015_TCP=tcp://rethinkdb:28015
       - STF_PROCESSOR_CONNECT_APP_DEALER=tcp://triproxy-app:7112
@@ -139,11 +110,6 @@ services:
       - adb
       - rethinkdb
       - triproxy-dev
-    volumes:
-      - .:/app
-      - node_modules:/app/node_modules
-      - bower_components:/app/res/bower_components
-      - res_build:/app/res/build
     environment:
       - RETHINKDB_PORT_28015_TCP=tcp://rethinkdb:28015
       - STF_PROVIDER_ADB_HOST=adb
@@ -167,11 +133,6 @@ services:
         condition: service_started
       triproxy-dev:
         condition: service_started
-    volumes:
-      - .:/app
-      - node_modules:/app/node_modules
-      - bower_components:/app/res/bower_components
-      - res_build:/app/res/build
     environment:
       - RETHINKDB_PORT_28015_TCP=tcp://rethinkdb:28015
       - STF_REAPER_CONNECT_PUSH=tcp://triproxy-dev:7113
@@ -186,11 +147,6 @@ services:
       test: nc -z localhost 7100
     depends_on:
       - builder
-    volumes:
-      - .:/app
-      - node_modules:/app/node_modules
-      - bower_components:/app/res/bower_components
-      - res_build:/app/res/build
     environment:
       - STF_STORAGE_PLUGIN_APK_STORAGE_URL=/s/apk/
     command: /app/bin/stf storage-plugin-apk
@@ -203,11 +159,6 @@ services:
       test: nc -z localhost 7100
     depends_on:
       - builder
-    volumes:
-      - .:/app
-      - node_modules:/app/node_modules
-      - bower_components:/app/res/bower_components
-      - res_build:/app/res/build
     environment:
       - STF_STORAGE_PLUGIN_IMAGE_STORAGE_URL=/s/image/
     command: /app/bin/stf storage-plugin-image
@@ -220,11 +171,6 @@ services:
       test: nc -z localhost 7100
     depends_on:
       - builder
-    volumes:
-      - .:/app
-      - node_modules:/app/node_modules
-      - bower_components:/app/res/bower_components
-      - res_build:/app/res/build
     command: /app/bin/stf storage-temp
 
   triproxy-app:
@@ -235,11 +181,6 @@ services:
       test: for port in 7111 7112 7113; do nc -z localhost $$port; done
     depends_on:
       - builder
-    volumes:
-      - .:/app
-      - node_modules:/app/node_modules
-      - bower_components:/app/res/bower_components
-      - res_build:/app/res/build
     command: /app/bin/stf triproxy app
 
   triproxy-dev:
@@ -250,11 +191,6 @@ services:
       test: for port in 7111 7112 7113; do nc -z localhost $$port; done
     depends_on:
       - builder
-    volumes:
-      - .:/app
-      - node_modules:/app/node_modules
-      - bower_components:/app/res/bower_components
-      - res_build:/app/res/build
     command: /app/bin/stf triproxy dev
 
   websocket:
@@ -267,11 +203,6 @@ services:
       - builder
       - rethinkdb
       - triproxy-app
-    volumes:
-      - .:/app
-      - node_modules:/app/node_modules
-      - bower_components:/app/res/bower_components
-      - res_build:/app/res/build
     environment:
       - RETHINKDB_PORT_28015_TCP=tcp://rethinkdb:28015
       - STF_WEBSOCKET_CONNECT_PUSH=tcp://triproxy-app:7113
@@ -339,15 +270,9 @@ services:
 volumes:
   adb:
     driver: local
-  bower_components:
-    driver: local
-  node_modules:
-    driver: local
   openldap:
     driver: local
   rethinkdb:
-    driver: local
-  res_build:
     driver: local
   wireguard:
     driver: local
