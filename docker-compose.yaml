@@ -6,16 +6,33 @@ services:
     image: reaostf
     pull_policy: never
 
+  migrate:
+    image: reaostf
+    depends_on:
+      builder:
+        condition: service_completed_successfully
+      rethinkdb:
+        condition: service_healthy
+    environment:
+      - RETHINKDB_PORT_28015_TCP=tcp://rethinkdb:28015
+    command: /app/bin/stf migrate
+    pull_policy: never
+
   api:
     image: reaostf
     pull_policy: never
     restart: unless-stopped
     healthcheck:
-      test: nc -z localhost 7106
+      test: nc -vz 127.0.0.1 7106
     depends_on:
-      - rethinkdb
-      - triproxy-app
-      - triproxy-dev
+      rethinkdb:
+        condition: service_healthy
+      triproxy-app:
+        condition: service_healthy
+      triproxy-dev: 
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
       - RETHINKDB_PORT_28015_TCP=tcp://rethinkdb:28015
       - STF_API_CONNECT_PUSH=tcp://triproxy-app:7113
@@ -30,12 +47,18 @@ services:
     pull_policy: never
     restart: unless-stopped
     healthcheck:
-      test: nc -z localhost 7105
+      test: nc -vz 127.0.0.1 7105
     depends_on:
-      - builder
-      - rethinkdb
-      - auth-ldap
-      - websocket
+      builder:
+        condition: service_completed_successfully
+      rethinkdb: 
+        condition: service_healthy
+      auth-ldap: 
+        condition: service_healthy
+      websocket: 
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
       - RETHINKDB_PORT_28015_TCP=tcp://rethinkdb:28015
       - STF_ADMIN_EMAIL=admin@ldap.lan
@@ -51,11 +74,14 @@ services:
     pull_policy: never
     restart: unless-stopped
     healthcheck:
-      test: nc -z localhost 7120
+      test: nc -vz 127.0.0.1 7120
     depends_on:
-      - builder
-      - rethinkdb
-      - openldap
+      builder:
+        condition: service_completed_successfully
+      rethinkdb:
+        condition: service_healthy  
+      openldap: 
+        condition: service_healthy
     environment:
       - RETHINKDB_PORT_28015_TCP=tcp://rethinkdb:28015
       - STF_AUTH_LDAP_APP_URL=/
@@ -75,9 +101,9 @@ services:
       rethinkdb:
         condition: service_healthy
       triproxy-app:
-        condition: service_started
+        condition: service_healthy
       triproxy-dev:
-        condition: service_started
+        condition: service_healthy
     environment:
       - RETHINKDB_PORT_28015_TCP=tcp://rethinkdb:28015
       - STF_GROUPS_ENGINE_CONNECT_PUSH=tcp://triproxy-app:7113
@@ -91,10 +117,14 @@ services:
     pull_policy: never
     restart: unless-stopped
     depends_on:
-      - builder
-      - rethinkdb
-      - triproxy-app
-      - triproxy-dev
+      builder:
+        condition: service_completed_successfully
+      rethinkdb:
+        condition: service_healthy
+      triproxy-app:
+        condition: service_healthy
+      triproxy-dev:
+        condition: service_healthy
     environment:
       - RETHINKDB_PORT_28015_TCP=tcp://rethinkdb:28015
       - STF_PROCESSOR_CONNECT_APP_DEALER=tcp://triproxy-app:7112
@@ -106,10 +136,14 @@ services:
     pull_policy: never
     restart: unless-stopped
     depends_on:
-      - builder
-      - adb
-      - rethinkdb
-      - triproxy-dev
+      builder:
+        condition: service_completed_successfully
+      adb:
+        condition: service_healthy
+      rethinkdb:
+        condition: service_healthy
+      triproxy-dev:
+        condition: service_healthy
     environment:
       - RETHINKDB_PORT_28015_TCP=tcp://rethinkdb:28015
       - STF_PROVIDER_ADB_HOST=adb
@@ -130,9 +164,9 @@ services:
       rethinkdb:
         condition: service_healthy
       triproxy-app:
-        condition: service_started
+        condition: service_healthy
       triproxy-dev:
-        condition: service_started
+        condition: service_healthy
     environment:
       - RETHINKDB_PORT_28015_TCP=tcp://rethinkdb:28015
       - STF_REAPER_CONNECT_PUSH=tcp://triproxy-dev:7113
@@ -144,9 +178,10 @@ services:
     pull_policy: never
     restart: unless-stopped
     healthcheck:
-      test: nc -z localhost 7100
+      test: nc -vz 127.0.0.1 7100
     depends_on:
-      - builder
+      builder:
+        condition: service_completed_successfully
     environment:
       - STF_STORAGE_PLUGIN_APK_STORAGE_URL=/s/apk/
     command: /app/bin/stf storage-plugin-apk
@@ -156,9 +191,10 @@ services:
     pull_policy: never
     restart: unless-stopped
     healthcheck:
-      test: nc -z localhost 7100
+      test: nc -vz 127.0.0.1 7100
     depends_on:
-      - builder
+      builder: 
+        condition: service_completed_successfully
     environment:
       - STF_STORAGE_PLUGIN_IMAGE_STORAGE_URL=/s/image/
     command: /app/bin/stf storage-plugin-image
@@ -168,9 +204,10 @@ services:
     pull_policy: never
     restart: unless-stopped
     healthcheck:
-      test: nc -z localhost 7100
+      test: nc -vz 127.0.0.1 7100
     depends_on:
-      - builder
+      builder:
+        condition: service_completed_successfully
     command: /app/bin/stf storage-temp
 
   triproxy-app:
@@ -178,9 +215,14 @@ services:
     pull_policy: never
     restart: unless-stopped
     healthcheck:
-      test: for port in 7111 7112 7113; do nc -z localhost $$port; done
+      test: nc -vz 127.0.0.1 7111 && nc -vz 127.0.0.1 7112 && nc -vz 127.0.0.1 7113
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     depends_on:
-      - builder
+      builder:
+        condition: service_completed_successfully
     command: /app/bin/stf triproxy app
 
   triproxy-dev:
@@ -188,9 +230,14 @@ services:
     pull_policy: never
     restart: unless-stopped
     healthcheck:
-      test: for port in 7111 7112 7113; do nc -z localhost $$port; done
+      test: nc -vz 127.0.0.1 7111 && nc -vz 127.0.0.1 7112 && nc -vz 127.0.0.1 7113
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     depends_on:
-      - builder
+      builder:
+        condition: service_completed_successfully
     command: /app/bin/stf triproxy dev
 
   websocket:
@@ -198,11 +245,16 @@ services:
     pull_policy: never
     restart: unless-stopped
     healthcheck:
-      test: nc -z localhost 7110
+      test: nc -vz 127.0.0.1 7110
     depends_on:
-      - builder
-      - rethinkdb
-      - triproxy-app
+      builder:
+        condition: service_completed_successfully
+      rethinkdb:
+        condition: service_healthy
+      triproxy-app:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
       - RETHINKDB_PORT_28015_TCP=tcp://rethinkdb:28015
       - STF_WEBSOCKET_CONNECT_PUSH=tcp://triproxy-app:7113
@@ -227,6 +279,10 @@ services:
     restart: unless-stopped
     healthcheck:
       test: bash -c 'echo > /dev/tcp/localhost/28015'
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     volumes:
       - rethinkdb:/data
 
@@ -235,7 +291,7 @@ services:
       dockerfile: Dockerfile-adb
     restart: unless-stopped
     healthcheck:
-      test: nc -z localhost 5037
+      test: nc -vz 127.0.0.1 5037
     extra_hosts:
       - a:host-gateway
       - b:10.37.0.2
@@ -261,7 +317,8 @@ services:
     healthcheck:
       test: curl -fs localhost:7100
     depends_on:
-      - app
+      app:
+        condition: service_healthy
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
     ports:
