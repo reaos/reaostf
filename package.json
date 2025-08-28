@@ -123,7 +123,7 @@
     "cross-spawn": "^7.0.5"
   },
   "devDependencies": {
-    "async": "^2.0.1",
+    "async": "^3.2.6",
     "bower": "^1.8.14",
     "chai": "^3.4.1",
     "consolidate": "^0.14.5",
